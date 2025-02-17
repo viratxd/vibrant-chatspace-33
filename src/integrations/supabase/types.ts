@@ -14,6 +14,7 @@ export type Database = {
           created_at: string | null
           grade: string | null
           id: string
+          is_premium: boolean | null
           phone: string | null
           updated_at: string | null
         }
@@ -21,6 +22,7 @@ export type Database = {
           created_at?: string | null
           grade?: string | null
           id: string
+          is_premium?: boolean | null
           phone?: string | null
           updated_at?: string | null
         }
@@ -28,6 +30,7 @@ export type Database = {
           created_at?: string | null
           grade?: string | null
           id?: string
+          is_premium?: boolean | null
           phone?: string | null
           updated_at?: string | null
         }
