@@ -3,17 +3,20 @@ import { Home, MessageCircle, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { AuthDialog } from "@/components/AuthDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 export const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
 
-  const handleProfileClick = () => {
-    if (location.pathname === "/profile") {
-      setShowAuthDialog(true);
-    } else {
+  const handleProfileClick = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session) {
       navigate("/profile");
+    } else {
+      setShowAuthDialog(true);
     }
   };
 
