@@ -1,5 +1,6 @@
 
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthDialogProps {
   open: boolean;
@@ -27,17 +30,72 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   const [phone, setPhone] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [grade, setGrade] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login:", { phone, password });
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        phone,
+        password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
+      });
+      
+      onOpenChange(false);
+      navigate("/profile");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle signup logic here
-    console.log("Signup:", { phone, password, grade });
+    setLoading(true);
+    try {
+      // Sign up the user
+      const { error: signUpError } = await supabase.auth.signUp({
+        phone,
+        password,
+        options: {
+          data: {
+            grade,
+          },
+        },
+      });
+
+      if (signUpError) throw signUpError;
+
+      toast({
+        title: "Welcome!",
+        description: "Your account has been created successfully.",
+      });
+
+      onOpenChange(false);
+      navigate("/profile");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,6 +126,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="bg-muted text-white"
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -79,10 +138,11 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-muted text-white"
+                  required
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Loading..." : "Login"}
               </Button>
             </form>
           </TabsContent>
@@ -97,6 +157,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="bg-muted text-white"
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -108,11 +169,12 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-muted text-white"
+                  required
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="grade">Class/Grade</Label>
-                <Select value={grade} onValueChange={setGrade}>
+                <Select value={grade} onValueChange={setGrade} required>
                   <SelectTrigger className="bg-muted text-white">
                     <SelectValue placeholder="Select your class" />
                   </SelectTrigger>
@@ -123,8 +185,8 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full">
-                Sign Up
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Loading..." : "Sign Up"}
               </Button>
             </form>
           </TabsContent>
