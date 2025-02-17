@@ -24,3 +24,5 @@ export function useToast() {
     toast: showToast,
   };
 }
+
+export { toast };
