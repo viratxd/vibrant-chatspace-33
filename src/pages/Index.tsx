@@ -60,8 +60,8 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <TaskCard
-              title="Wordplay Riddles"
-              description="Solve wordplay riddles while expanding vocabulary"
+              title="Ai Solver"
+              description="Solve Question Ncert with Ai"
               icon={<Puzzle className="w-5 h-5 sm:w-6 sm:h-6" />}
             />
             <TaskCard
