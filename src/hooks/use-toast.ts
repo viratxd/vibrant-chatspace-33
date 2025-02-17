@@ -1,5 +1,5 @@
 
-import { Toast, toast } from "sonner";
+import { toast } from "sonner";
 
 interface ToastOptions {
   title?: string;
