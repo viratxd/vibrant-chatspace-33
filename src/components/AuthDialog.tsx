@@ -27,6 +27,7 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
+  const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [grade, setGrade] = React.useState("");
@@ -39,7 +40,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        phone,
+        email,
         password,
       });
 
@@ -67,18 +68,26 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     e.preventDefault();
     setLoading(true);
     try {
-      // Sign up the user
-      const { error: signUpError } = await supabase.auth.signUp({
-        phone,
+      // Sign up the user with email
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email,
         password,
-        options: {
-          data: {
-            grade,
-          },
-        },
       });
 
       if (signUpError) throw signUpError;
+
+      // If signup successful, create profile with phone and grade
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: authData.user.id,
+            phone,
+            grade,
+          });
+
+        if (profileError) throw profileError;
+      }
 
       toast({
         title: "Welcome!",
@@ -118,13 +127,13 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="phone-login">Phone Number</Label>
+                <Label htmlFor="email-login">Email</Label>
                 <Input
-                  id="phone-login"
-                  type="tel"
-                  placeholder="Enter your phone number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  id="email-login"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="bg-muted text-white"
                   required
                 />
@@ -148,6 +157,18 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
           </TabsContent>
           <TabsContent value="signup">
             <form onSubmit={handleSignup} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email-signup">Email</Label>
+                <Input
+                  id="email-signup"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-muted text-white"
+                  required
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="phone-signup">Phone Number</Label>
                 <Input
