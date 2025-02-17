@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { BottomNav } from "@/components/BottomNav";
 import { Header } from "@/components/Header";
 import { ArrowRight, Globe, Puzzle, BookOpen } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const FeatureCard = ({ title, description, icon }: { title: string; description: string; icon: React.ReactNode }) => (
   <motion.div
@@ -23,11 +24,12 @@ const FeatureCard = ({ title, description, icon }: { title: string; description:
   </motion.div>
 );
 
-const TaskCard = ({ title, description, icon }: { title: string; description: string; icon: React.ReactNode }) => (
+const TaskCard = ({ title, description, icon, onClick }: { title: string; description: string; icon: React.ReactNode; onClick?: () => void }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    className="bg-muted rounded-lg p-3 sm:p-4 flex flex-col space-y-2"
+    className="bg-muted rounded-lg p-3 sm:p-4 flex flex-col space-y-2 cursor-pointer hover:bg-muted/80 transition-colors"
+    onClick={onClick}
   >
     <div className="text-primary mb-2">{icon}</div>
     <h3 className="text-white font-medium text-sm sm:text-base">{title}</h3>
@@ -36,6 +38,8 @@ const TaskCard = ({ title, description, icon }: { title: string; description: st
 );
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Header />
@@ -60,9 +64,10 @@ const Index = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <TaskCard
-              title="Ai Solver"
-              description="Solve Question Ncert with Ai"
+              title="AI Solver"
+              description="Solve NCERT questions with AI"
               icon={<Puzzle className="w-5 h-5 sm:w-6 sm:h-6" />}
+              onClick={() => navigate("/ai-solver")}
             />
             <TaskCard
               title="Word Associations"
