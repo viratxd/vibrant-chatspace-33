@@ -200,8 +200,8 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                     <SelectValue placeholder="Select your class" />
                   </SelectTrigger>
                   <SelectContent className="bg-secondary">
-                    <SelectItem value="10" className="text-sm sm:text-base">Class 10</SelectItem>
-                    <SelectItem value="11" className="text-sm sm:text-base">Class 11</SelectItem>
+                    <SelectItem value="10" className="text-sm text-white sm:text-base">Class 10</SelectItem>
+                    <SelectItem value="11" className="text-sm text-white sm:text-base">Class 11</SelectItem>
                     <SelectItem value="12" className="text-sm text-white sm:text-base">Class 12</SelectItem>
                   </SelectContent>
                 </Select>
