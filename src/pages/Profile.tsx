@@ -2,6 +2,8 @@
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Globe, Headset, Star, Shield, Share2, UserPlus, Trash2, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { AuthDialog } from "@/components/AuthDialog";
 
 const ProfileOption = ({ icon: Icon, label }: { icon: any; label: string }) => (
   <motion.div
@@ -18,6 +20,8 @@ const ProfileOption = ({ icon: Icon, label }: { icon: any; label: string }) => (
 );
 
 const Profile = () => {
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Header />
@@ -25,7 +29,8 @@ const Profile = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 text-center"
+          className="mb-6 text-center cursor-pointer"
+          onClick={() => setShowAuthDialog(true)}
         >
           <div className="w-20 h-20 bg-primary/20 rounded-full mx-auto mb-3 flex items-center justify-center">
             <UserPlus size={32} className="text-primary" />
@@ -60,6 +65,8 @@ const Profile = () => {
           <ProfileOption icon={UserPlus} label="Invite Friends" />
           <ProfileOption icon={Trash2} label="Clear all history" />
         </div>
+
+        <AuthDialog open={showAuthDialog} onOpenChange={setShowAuthDialog} />
       </main>
     </div>
   );
