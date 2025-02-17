@@ -46,7 +46,7 @@ const Index = () => {
             <FeatureCard
               title="AI Art"
               description="Turn words into image"
-              icon={<Globe size={24} />}
+              icon={<Globe className="w-5 h-5 sm:w-6 sm:h-6" />}
             />
           </div>
         </section>
@@ -62,12 +62,12 @@ const Index = () => {
             <TaskCard
               title="Wordplay Riddles"
               description="Solve wordplay riddles while expanding vocabulary"
-              icon={<Puzzle size={20} sm:size={24} />}
+              icon={<Puzzle className="w-5 h-5 sm:w-6 sm:h-6" />}
             />
             <TaskCard
               title="Word Associations"
               description="Expand your vocabulary through word associations"
-              icon={<BookOpen size={20} sm:size={24} />}
+              icon={<BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />}
             />
           </div>
         </section>
