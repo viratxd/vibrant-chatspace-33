@@ -3,10 +3,11 @@ import { Header } from "@/components/Header";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { QrCode, CreditCard, ArrowRight } from "lucide-react";
+import { PricingHeader } from "@/components/pricing/PricingHeader";
+import { PricingCard } from "@/components/pricing/PricingCard";
+import { QrCodeSection } from "@/components/pricing/QrCodeSection";
+import { TransactionForm } from "@/components/pricing/TransactionForm";
 
 const Pricing = () => {
   const [qrCode, setQrCode] = useState("");
@@ -66,7 +67,6 @@ const Pricing = () => {
       
       if (!user) throw new Error("User not authenticated");
 
-      // Create payment transaction
       const { error: transactionError } = await supabase
         .from("payment_transactions")
         .insert({
@@ -77,7 +77,6 @@ const Pricing = () => {
 
       if (transactionError) throw transactionError;
 
-      // Update user's premium status
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ is_premium: true })
@@ -120,71 +119,16 @@ const Pricing = () => {
       <Header />
       <main className="pt-20 px-4 max-w-md mx-auto">
         <div className="space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold">Upgrade to Pro</h1>
-            <p className="text-gray-400">Get access to all premium features</p>
-          </div>
-
-          <div className="bg-secondary rounded-lg p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h2 className="text-xl font-semibold">Pro Plan</h2>
-                <p className="text-sm text-gray-400">One-time payment</p>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold">₹{price}</div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <CreditCard className="text-primary" size={16} />
-                <span>Full access to all features</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <ArrowRight className="text-primary" size={16} />
-                <span>Priority support</span>
-              </div>
-            </div>
-          </div>
-
+          <PricingHeader />
+          <PricingCard price={price} />
           <div className="space-y-4">
-            <div className="bg-secondary p-6 rounded-lg space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <QrCode className="text-primary" size={20} />
-                <h3 className="font-semibold">Scan & Pay</h3>
-              </div>
-              <div className="aspect-square bg-white rounded-lg p-4">
-                <img
-                  src={qrCode}
-                  alt="Payment QR Code"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="transactionNumber" className="text-sm font-medium">
-                  Transaction Number
-                </label>
-                <Input
-                  id="transactionNumber"
-                  placeholder="Enter your transaction number"
-                  value={transactionNumber}
-                  onChange={(e) => setTransactionNumber(e.target.value)}
-                  required
-                  className="bg-secondary border-none"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={submitting}
-              >
-                {submitting ? "Processing..." : "Submit Payment"}
-              </Button>
-            </form>
+            <QrCodeSection qrCode={qrCode} />
+            <TransactionForm
+              transactionNumber={transactionNumber}
+              setTransactionNumber={setTransactionNumber}
+              onSubmit={handleSubmit}
+              submitting={submitting}
+            />
           </div>
         </div>
       </main>
