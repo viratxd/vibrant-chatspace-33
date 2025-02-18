@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -38,25 +37,36 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      console.log("Attempting login with:", { email }); // Debug log
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error); // Debug log
+        throw error;
+      }
 
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
-      
-      onOpenChange(false);
-      navigate("/profile");
+      if (data?.user) {
+        console.log("Login successful:", data.user); // Debug log
+        
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
+        
+        onOpenChange(false);
+        navigate("/profile");
+      }
     } catch (error: any) {
+      console.error("Caught error during login:", error); // Debug log
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Login Failed",
+        description: error.message || "Failed to login. Please check your credentials.",
         variant: "destructive",
       });
     } finally {
@@ -70,7 +80,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     try {
       // Sign up the user with email
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
@@ -84,18 +94,19 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
             id: authData.user.id,
             phone,
             grade,
+            updated_at: new Date().toISOString(),
           });
 
         if (profileError) throw profileError;
+
+        toast({
+          title: "Welcome!",
+          description: "Your account has been created successfully.",
+        });
+
+        onOpenChange(false);
+        navigate("/profile");
       }
-
-      toast({
-        title: "Welcome!",
-        description: "Your account has been created successfully.",
-      });
-
-      onOpenChange(false);
-      navigate("/profile");
     } catch (error: any) {
       toast({
         title: "Error",
