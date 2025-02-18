@@ -119,6 +119,7 @@ const Profile = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            onClick={() => navigate("/pricing")}
             className="bg-gradient-to-r from-primary/80 to-primary rounded-lg p-4 mb-6 flex items-center justify-between cursor-pointer"
           >
             <div className="flex items-center space-x-3">
