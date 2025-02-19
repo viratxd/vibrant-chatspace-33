@@ -46,7 +46,7 @@ const addElementToPDF = async (
 };
 
 /**
- * Generates a PDF with answer cards arranged in a collage layout
+ * Generates a PDF with answer cards arranged in a vertical layout
  */
 export const generatePDF = async (elementId: string) => {
   const container = document.getElementById(elementId);
@@ -66,43 +66,35 @@ export const generatePDF = async (elementId: string) => {
   // A4 dimensions and margins (in mm)
   const pageWidth = 210;
   const pageHeight = 297;
-  const margin = 15;
-  const gap = 10; // Gap between cards
+  const margin = 20; // Increased margin for better spacing
+  const gap = 15; // Gap between cards
 
   // Calculate available space
   const contentWidth = pageWidth - (2 * margin);
-  const contentHeight = pageHeight - (2 * margin);
+  const contentHeight = (pageHeight - (2 * margin) - gap) / 2; // Height for 2 cards
 
-  // Calculate maximum dimensions for each card (2x2 grid)
-  const maxCardWidth = (contentWidth - gap) / 2;
-  const maxCardHeight = (contentHeight - gap) / 2;
-
-  // Process cards in groups of 4
-  for (let i = 0; i < cards.length; i += 4) {
+  // Process cards in groups of 2
+  for (let i = 0; i < cards.length; i += 2) {
     if (i > 0) {
       pdf.addPage();
     }
 
-    // Get up to 4 cards for this page
-    const pageCards = cards.slice(i, Math.min(i + 4, cards.length));
+    // Get up to 2 cards for this page
+    const pageCards = cards.slice(i, Math.min(i + 2, cards.length));
 
     // Add each card to the PDF
     for (let j = 0; j < pageCards.length; j++) {
-      const row = Math.floor(j / 2);
-      const col = j % 2;
-
-      // Calculate position for this card
-      const x = margin + (col * (maxCardWidth + gap));
-      const y = margin + (row * (maxCardHeight + gap));
+      // Calculate y position based on card index
+      const y = margin + (j * (contentHeight + gap));
 
       // Add card to PDF
       await addElementToPDF(
         pageCards[j] as HTMLElement,
         pdf,
-        x,
+        margin,
         y,
-        maxCardWidth,
-        maxCardHeight
+        contentWidth,
+        contentHeight
       );
     }
   }
