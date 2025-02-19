@@ -1,6 +1,5 @@
 
 import { motion } from "framer-motion";
-import { BottomNav } from "@/components/BottomNav";
 import { Header } from "@/components/Header";
 import { ArrowRight, Globe, Puzzle, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -77,7 +76,6 @@ const Index = () => {
           </div>
         </section>
       </main>
-      <BottomNav />
     </div>
   );
 };

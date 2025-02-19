@@ -7,6 +7,7 @@ import AiSolver from "./pages/AiSolver";
 import Pricing from "./pages/Pricing";
 import { Toaster } from "./components/ui/toaster";
 import NotFound from "./pages/NotFound";
+import { BottomNav } from "./components/BottomNav";
 import "./App.css";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <BottomNav />
       <Toaster />
     </Router>
   );
