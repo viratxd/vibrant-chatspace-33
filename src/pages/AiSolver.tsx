@@ -4,7 +4,7 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Image as ImageIcon, Download } from "lucide-react";
+import { Loader2, Image as ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -20,11 +20,8 @@ interface Question {
 const AiSolver = () => {
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [processing, setProcessing] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [grade, setGrade] = useState("");
-  const [mode, setMode] = useState<"answer" | "quiz">("answer");
-  const [progress, setProgress] = useState(0);
+  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -53,88 +50,76 @@ const AiSolver = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!image || !grade) {
+    if (!image) {
       toast({
-        title: "Missing information",
-        description: "Please provide both an image and grade",
+        title: "Missing image",
+        description: "Please upload an image to process",
         variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
-    setProcessing(true);
-    setProgress(0);
 
     try {
-      // Step 1: Process image with OCR
-      setProgress(25);
+      // Step 1: Extract text using OCR
       const extractedText = await processImage(image);
-
-      // Step 2: Generate questions/answers using ChatGPT
-      setProgress(50);
-      const prompt = mode === "quiz" 
-        ? `Extract questions from this text and format as JSON array: ${extractedText}`
-        : `Answer this question: ${extractedText}. Context: Grade ${grade}`;
+      
+      // Step 2: Generate questions using Chat API
+      const prompt = `Extract questions from this text and return them in this JSON format:
+      {
+        "questions": [
+          { "id": "Q1", "question": "first question" },
+          { "id": "Q2", "question": "second question" }
+        ]
+      }
+      
+      Text to process: ${extractedText}`;
 
       const response = await sendMessage(prompt);
       const result = await response.json();
-      setProgress(75);
-
-      if (mode === "quiz") {
-        try {
-          const parsedQuestions = JSON.parse(result.choices[0].message.content);
-          setQuestions(parsedQuestions.questions || []);
-        } catch (error) {
-          console.error("Failed to parse questions:", error);
-          setQuestions([{ id: "Q1", question: result.choices[0].message.content }]);
-        }
-      } else {
-        setQuestions([
-          { 
-            id: "A1", 
-            question: extractedText,
-            answer: result.choices[0].message.content 
-          }
-        ]);
+      
+      try {
+        const parsedQuestions = JSON.parse(result.choices[0].message.content);
+        setQuestions(parsedQuestions.questions || []);
+        toast({
+          title: "Success",
+          description: "Questions extracted successfully",
+        });
+      } catch (error) {
+        console.error("Failed to parse questions:", error);
+        toast({
+          title: "Error",
+          description: "Failed to parse questions from the response",
+          variant: "destructive",
+        });
       }
-
-      setProgress(100);
-      toast({
-        title: "Success",
-        description: "Image processed successfully",
-      });
     } catch (error: any) {
       toast({
-        title: "Error processing image",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
-      setProcessing(false);
     }
   };
 
-  const handleGenerateAnswer = async (question: Question) => {
-    if (question.answer) return;
+  const handleGetAnswer = async (question: Question) => {
+    if (answers[question.id]) return;
 
     try {
-      const response = await sendMessage(
-        `Answer this question for a grade ${grade} student: ${question.question}`
-      );
+      const prompt = `Please provide a clear and detailed answer to this question: ${question.question}`;
+      const response = await sendMessage(prompt);
       const result = await response.json();
-
-      setQuestions(prev => 
-        prev.map(q => 
-          q.id === question.id 
-            ? { ...q, answer: result.choices[0].message.content }
-            : q
-        )
-      );
+      
+      setAnswers(prev => ({
+        ...prev,
+        [question.id]: result.choices[0].message.content
+      }));
     } catch (error: any) {
       toast({
-        title: "Error generating answer",
+        title: "Error getting answer",
         description: error.message,
         variant: "destructive",
       });
@@ -160,46 +145,11 @@ const AiSolver = () => {
           <Tabs defaultValue="upload" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="upload">Upload</TabsTrigger>
-              <TabsTrigger value="responses">Responses</TabsTrigger>
+              <TabsTrigger value="answers">Answers</TabsTrigger>
             </TabsList>
 
             <TabsContent value="upload" className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Grade/Class</label>
-                  <Input
-                    type="text"
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    placeholder="e.g., Grade 10"
-                    className="bg-secondary border-none"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Mode</label>
-                  <div className="flex space-x-4">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        checked={mode === "answer"}
-                        onChange={() => setMode("answer")}
-                        className="text-primary"
-                      />
-                      <span>Answer</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        checked={mode === "quiz"}
-                        onChange={() => setMode("quiz")}
-                        className="text-primary"
-                      />
-                      <span>Quiz Solve</span>
-                    </label>
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Upload Image</label>
                   <div className="border-2 border-dashed border-gray-600 rounded-lg p-4">
@@ -231,19 +181,10 @@ const AiSolver = () => {
                   )}
                 </div>
 
-                {processing && (
-                  <div className="w-full bg-gray-700 rounded-full h-2.5">
-                    <div
-                      className="bg-primary h-2.5 rounded-full transition-all duration-500"
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                )}
-
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={loading || !image || !grade}
+                  disabled={loading || !image}
                 >
                   {loading ? (
                     <>
@@ -251,42 +192,61 @@ const AiSolver = () => {
                       Processing...
                     </>
                   ) : (
-                    "Submit"
+                    "Extract Questions"
                   )}
                 </Button>
               </form>
+
+              {questions.length > 0 && (
+                <div className="space-y-4 mt-6">
+                  <h2 className="text-xl font-semibold">Extracted Questions</h2>
+                  <div className="space-y-4">
+                    {questions.map((question) => (
+                      <div
+                        key={question.id}
+                        className="bg-gray-800 rounded-lg p-4 space-y-3"
+                      >
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-medium">{question.id}</h3>
+                        </div>
+                        <p className="text-gray-300">{question.question}</p>
+                        <Button
+                          onClick={() => handleGetAnswer(question)}
+                          variant="secondary"
+                          disabled={!!answers[question.id]}
+                        >
+                          {answers[question.id] ? "Answer Generated" : "Get Answer"}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
-            <TabsContent value="responses" className="space-y-6">
-              {questions.length === 0 ? (
+            <TabsContent value="answers" className="space-y-6">
+              {Object.keys(answers).length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
-                  No responses yet. Upload an image to get started.
+                  No answers yet. Generate answers for questions first.
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {questions.map((question) => (
-                    <div
-                      key={question.id}
-                      className="bg-secondary rounded-lg p-6 space-y-4"
-                    >
-                      <div className="flex justify-between items-start">
+                  {questions
+                    .filter(q => answers[q.id])
+                    .map((question) => (
+                      <div
+                        key={question.id}
+                        className="bg-gray-800 rounded-lg p-6 space-y-4"
+                      >
                         <h3 className="font-medium">{question.id}</h3>
-                      </div>
-                      <p className="text-gray-300">{question.question}</p>
-                      {question.answer ? (
-                        <div className="mt-4 p-4 bg-gray-800 rounded-lg">
-                          <p className="text-gray-300">{question.answer}</p>
+                        <div className="text-gray-300">
+                          <p className="font-medium mb-2">Question:</p>
+                          <p className="mb-4">{question.question}</p>
+                          <p className="font-medium mb-2">Answer:</p>
+                          <p className="whitespace-pre-wrap">{answers[question.id]}</p>
                         </div>
-                      ) : (
-                        <Button
-                          onClick={() => handleGenerateAnswer(question)}
-                          variant="secondary"
-                        >
-                          Generate Answer
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    ))}
                 </div>
               )}
             </TabsContent>
