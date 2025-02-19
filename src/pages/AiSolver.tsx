@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,11 +31,14 @@ const AiSolver = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [activeTab, setActiveTab] = useState("upload");
+  const [answeredQuestions, setAnsweredQuestions] = useState(new Set<string>());
+  const [isPremium, setIsPremium] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     checkAuth();
+    checkPremiumStatus();
   }, []);
 
   const checkAuth = async () => {
@@ -48,6 +50,23 @@ const AiSolver = () => {
         description: "Please login to access AI Solver",
         variant: "destructive",
       });
+    }
+  };
+
+  const checkPremiumStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_premium')
+          .eq('id', user.id)
+          .single();
+        
+        setIsPremium(profile?.is_premium || false);
+      }
+    } catch (error) {
+      console.error('Error checking premium status:', error);
     }
   };
 
@@ -129,7 +148,7 @@ const AiSolver = () => {
   };
 
   const handleGetAnswer = async (question: Question) => {
-    if (answers.some(a => a.questionId === question.id)) {
+    if (!isPremium && answeredQuestions.has(question.id)) {
       return;
     }
 
@@ -148,6 +167,10 @@ const AiSolver = () => {
 
       setAnswers(prev => [...prev, newAnswer]);
       setActiveTab("answers");
+      
+      if (!isPremium) {
+        setAnsweredQuestions(prev => new Set(prev).add(question.id));
+      }
       
       toast({
         title: "Success",
@@ -228,6 +251,8 @@ const AiSolver = () => {
                 loadingAnswers={loadingAnswers}
                 onGetAnswer={handleGetAnswer}
                 hasAnswer={hasAnswer}
+                isPremium={isPremium}
+                answeredQuestions={answeredQuestions}
               />
             </TabsContent>
 
