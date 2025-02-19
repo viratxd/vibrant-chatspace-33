@@ -1,4 +1,4 @@
-
+import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import html2pdf from 'html2pdf.js';
 
@@ -9,10 +9,97 @@ export interface AnswerCard {
 }
 
 /**
- * Generates a custom PDF where each page contains answer cards arranged in a two-column grid.
- *
- * @param answerCards - Array of AnswerCard data objects.
+ * Converts an HTML element to an image data URL
  */
+const elementToImage = async (element: HTMLElement): Promise<string> => {
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    backgroundColor: '#1f2937', // Match the dark theme background
+  });
+  return canvas.toDataURL('image/png');
+};
+
+/**
+ * Generates a PDF with answer cards arranged in a collage layout (up to 4 per page)
+ */
+export const generatePDF = async (elementId: string) => {
+  const container = document.getElementById(elementId);
+  if (!container) return;
+
+  const answerCards = Array.from(container.getElementsByClassName('answer-card'));
+  if (answerCards.length === 0) return;
+
+  // Initialize PDF with A4 size
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  // A4 dimensions in mm
+  const pageWidth = 210;
+  const pageHeight = 297;
+  const margin = 10;
+  
+  // Calculate available space
+  const availableWidth = pageWidth - (2 * margin);
+  const availableHeight = pageHeight - (2 * margin);
+  
+  // Calculate dimensions for 2x2 grid layout
+  const maxImageWidth = availableWidth / 2;
+  const maxImageHeight = availableHeight / 2;
+
+  // Process cards in groups of 4
+  for (let pageIndex = 0; pageIndex < Math.ceil(answerCards.length / 4); pageIndex++) {
+    if (pageIndex > 0) {
+      pdf.addPage();
+    }
+
+    // Get the next 4 cards (or fewer for the last page)
+    const startIdx = pageIndex * 4;
+    const pageCards = answerCards.slice(startIdx, startIdx + 4);
+
+    // Convert each card to an image and add to PDF
+    for (let i = 0; i < pageCards.length; i++) {
+      const card = pageCards[i] as HTMLElement;
+      
+      try {
+        // Convert card to image
+        const imageData = await elementToImage(card);
+
+        // Calculate position based on index
+        const row = Math.floor(i / 2);
+        const col = i % 2;
+        
+        // Calculate x and y positions
+        const x = margin + (col * maxImageWidth);
+        const y = margin + (row * maxImageHeight);
+
+        // Add image to PDF with automatic scaling
+        pdf.addImage(
+          imageData,
+          'PNG',
+          x,
+          y,
+          maxImageWidth,
+          maxImageHeight,
+          undefined,
+          'FAST',
+          0
+        );
+      } catch (error) {
+        console.error('Error processing card:', error);
+      }
+    }
+  }
+
+  // Save the PDF
+  pdf.save('answers-collage.pdf');
+};
+
+// Keeping the original grid PDF function as backup
 export const generateGridPDF = (answerCards: AnswerCard[]) => {
   // Create a jsPDF document with letter format (8.5" x 11") and inches as units.
   const doc = new jsPDF({
@@ -102,24 +189,4 @@ export const generateGridPDF = (answerCards: AnswerCard[]) => {
 
   // Save the generated PDF.
   doc.save('grid_answers.pdf');
-};
-
-// Added the missing generatePDF function
-export const generatePDF = async (elementId: string) => {
-  const element = document.getElementById(elementId);
-  if (!element) return;
-
-  const opt = {
-    margin: 0.5,
-    filename: 'answers.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-  };
-
-  try {
-    await html2pdf().set(opt).from(element).save();
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-  }
 };
