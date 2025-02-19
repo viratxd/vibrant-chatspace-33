@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Image as ImageIcon } from "lucide-react";
+import { Loader2, Image as ImageIcon, FileDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +13,7 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import html2pdf from 'html2pdf.js';
 
 interface Question {
   id: string;
@@ -134,7 +134,6 @@ const AiSolver = () => {
       return;
     }
 
-    // Set loading state for this specific question
     setLoadingAnswers(prev => ({ ...prev, [question.id]: true }));
 
     try {
@@ -162,9 +161,28 @@ const AiSolver = () => {
         variant: "destructive",
       });
     } finally {
-      // Clear loading state for this specific question
       setLoadingAnswers(prev => ({ ...prev, [question.id]: false }));
     }
+  };
+
+  const handleExportPDF = () => {
+    const content = document.getElementById('answers-content');
+    if (!content) return;
+
+    const opt = {
+      margin: [0.5, 0.5],
+      filename: 'answers.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(content).save();
+    
+    toast({
+      title: "Success",
+      description: "Exporting answers to PDF...",
+    });
   };
 
   return (
@@ -308,37 +326,49 @@ const AiSolver = () => {
                   No answers yet. Generate answers from the Questions tab.
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {answers.map((answer) => (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      key={answer.questionId}
-                      className="bg-gray-800 rounded-lg p-6 space-y-4"
+                <div className="space-y-8">
+                  <div id="answers-content" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {answers.map((answer) => (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={answer.questionId}
+                        className="bg-gray-800 rounded-lg p-6 space-y-4 border border-gray-700"
+                      >
+                        <h3 className="font-medium text-lg">{answer.questionId}</h3>
+                        <div className="text-gray-300">
+                          <p className="font-medium mb-2">Question:</p>
+                          <div className="mb-4 prose prose-invert max-w-none">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
+                            >
+                              {answer.question}
+                            </ReactMarkdown>
+                          </div>
+                          <p className="font-medium mb-2">Answer:</p>
+                          <div className="prose prose-invert max-w-none">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
+                            >
+                              {answer.answer}
+                            </ReactMarkdown>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                  <div className="flex justify-center pb-32">
+                    <Button
+                      onClick={handleExportPDF}
+                      className="flex items-center gap-2"
+                      variant="secondary"
                     >
-                      <h3 className="font-medium">{answer.questionId}</h3>
-                      <div className="text-gray-300">
-                        <p className="font-medium mb-2">Question:</p>
-                        <div className="mb-4 prose prose-invert max-w-none">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkMath]}
-                            rehypePlugins={[rehypeKatex]}
-                          >
-                            {answer.question}
-                          </ReactMarkdown>
-                        </div>
-                        <p className="font-medium mb-2">Answer:</p>
-                        <div className="prose prose-invert max-w-none">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkMath]}
-                            rehypePlugins={[rehypeKatex]}
-                          >
-                            {answer.answer}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      <FileDown className="w-4 h-4" />
+                      Export to PDF
+                    </Button>
+                  </div>
                 </div>
               )}
             </TabsContent>
