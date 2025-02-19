@@ -8,6 +8,7 @@ import { PricingHeader } from "@/components/pricing/PricingHeader";
 import { PricingCard } from "@/components/pricing/PricingCard";
 import { QrCodeSection } from "@/components/pricing/QrCodeSection";
 import { TransactionForm } from "@/components/pricing/TransactionForm";
+import { Button } from "@/components/ui/button";
 
 const CACHE_KEY = 'payment_settings';
 
@@ -174,7 +175,7 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-black text-white">
       <Header />
-      <main className="pt-20 px-4 max-w-md mx-auto">
+      <main className="pt-20 px-4 pb-32 max-w-md mx-auto"> {/* Added pb-32 for bottom padding */}
         <div className="space-y-6">
           <PricingHeader />
           <PricingCard price={price} />
