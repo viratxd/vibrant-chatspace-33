@@ -14,14 +14,19 @@ import { processImage, sendMessage } from "@/lib/ai-utils";
 interface Question {
   id: string;
   question: string;
-  answer?: string;
+}
+
+interface Answer {
+  questionId: string;
+  question: string;
+  answer: string;
 }
 
 const AiSolver = () => {
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [answers, setAnswers] = useState<Answer[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -62,7 +67,7 @@ const AiSolver = () => {
     setLoading(true);
 
     try {
-      // Step 1: Extract text using OCR
+      // Step 1: OCR text extraction
       const extractedText = await processImage(image);
       
       // Step 2: Generate questions using Chat API
@@ -106,23 +111,37 @@ const AiSolver = () => {
   };
 
   const handleGetAnswer = async (question: Question) => {
-    if (answers[question.id]) return;
+    // Check if answer already exists
+    if (answers.some(a => a.questionId === question.id)) {
+      return;
+    }
 
+    setLoading(true);
     try {
       const prompt = `Please provide a clear and detailed answer to this question: ${question.question}`;
       const response = await sendMessage(prompt);
       const result = await response.json();
       
-      setAnswers(prev => ({
-        ...prev,
-        [question.id]: result.choices[0].message.content
-      }));
+      const newAnswer: Answer = {
+        questionId: question.id,
+        question: question.question,
+        answer: result.choices[0].message.content
+      };
+
+      setAnswers(prev => [...prev, newAnswer]);
+      
+      toast({
+        title: "Success",
+        description: "Answer generated successfully",
+      });
     } catch (error: any) {
       toast({
         title: "Error getting answer",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -143,8 +162,9 @@ const AiSolver = () => {
           </div>
 
           <Tabs defaultValue="upload" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="upload">Upload</TabsTrigger>
+              <TabsTrigger value="questions">Questions</TabsTrigger>
               <TabsTrigger value="answers">Answers</TabsTrigger>
             </TabsList>
 
@@ -192,61 +212,63 @@ const AiSolver = () => {
                       Processing...
                     </>
                   ) : (
-                    "Extract Questions"
+                    "Process Image"
                   )}
                 </Button>
               </form>
+            </TabsContent>
 
-              {questions.length > 0 && (
-                <div className="space-y-4 mt-6">
-                  <h2 className="text-xl font-semibold">Extracted Questions</h2>
-                  <div className="space-y-4">
-                    {questions.map((question) => (
-                      <div
-                        key={question.id}
-                        className="bg-gray-800 rounded-lg p-4 space-y-3"
+            <TabsContent value="questions" className="space-y-6">
+              {questions.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">
+                  No questions yet. Upload an image to extract questions.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {questions.map((question) => (
+                    <div
+                      key={question.id}
+                      className="bg-gray-800 rounded-lg p-4 space-y-3"
+                    >
+                      <h3 className="font-medium">{question.id}</h3>
+                      <p className="text-gray-300">{question.question}</p>
+                      <Button
+                        onClick={() => handleGetAnswer(question)}
+                        variant="secondary"
+                        disabled={answers.some(a => a.questionId === question.id)}
                       >
-                        <div className="flex justify-between items-start">
-                          <h3 className="font-medium">{question.id}</h3>
-                        </div>
-                        <p className="text-gray-300">{question.question}</p>
-                        <Button
-                          onClick={() => handleGetAnswer(question)}
-                          variant="secondary"
-                          disabled={!!answers[question.id]}
-                        >
-                          {answers[question.id] ? "Answer Generated" : "Get Answer"}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                        {answers.some(a => a.questionId === question.id) 
+                          ? "Answer Generated" 
+                          : "Get Answer"
+                        }
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="answers" className="space-y-6">
-              {Object.keys(answers).length === 0 ? (
+              {answers.length === 0 ? (
                 <div className="text-center text-gray-400 py-8">
-                  No answers yet. Generate answers for questions first.
+                  No answers yet. Generate answers from the Questions tab.
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {questions
-                    .filter(q => answers[q.id])
-                    .map((question) => (
-                      <div
-                        key={question.id}
-                        className="bg-gray-800 rounded-lg p-6 space-y-4"
-                      >
-                        <h3 className="font-medium">{question.id}</h3>
-                        <div className="text-gray-300">
-                          <p className="font-medium mb-2">Question:</p>
-                          <p className="mb-4">{question.question}</p>
-                          <p className="font-medium mb-2">Answer:</p>
-                          <p className="whitespace-pre-wrap">{answers[question.id]}</p>
-                        </div>
+                  {answers.map((answer) => (
+                    <div
+                      key={answer.questionId}
+                      className="bg-gray-800 rounded-lg p-6 space-y-4"
+                    >
+                      <h3 className="font-medium">{answer.questionId}</h3>
+                      <div className="text-gray-300">
+                        <p className="font-medium mb-2">Question:</p>
+                        <p className="mb-4">{answer.question}</p>
+                        <p className="font-medium mb-2">Answer:</p>
+                        <p className="whitespace-pre-wrap">{answer.answer}</p>
                       </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
               )}
             </TabsContent>
