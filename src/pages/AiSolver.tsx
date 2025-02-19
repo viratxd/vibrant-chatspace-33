@@ -1,19 +1,18 @@
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Image as ImageIcon, FileDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { processImage, sendMessage } from "@/lib/ai-utils";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
+import { generatePDF } from "@/lib/pdf-utils";
+import { UploadSection } from "@/components/ai-solver/UploadSection";
+import { QuestionsSection } from "@/components/ai-solver/QuestionsSection";
+import { AnswersSection } from "@/components/ai-solver/AnswersSection";
 import "katex/dist/katex.min.css";
-import html2pdf from 'html2pdf.js';
 
 interface Question {
   id: string;
@@ -165,36 +164,10 @@ const AiSolver = () => {
     }
   };
 
-  const handleExportPDF = () => {
-    const content = document.getElementById('answers-content');
-    if (!content) return;
+  const hasAnswer = (questionId: string) => answers.some(a => a.questionId === questionId);
 
-    const opt = {
-      margin: [0.75, 0.75],
-      filename: 'answers.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2,
-        letterRendering: true,
-        useCORS: true,
-        logging: true
-      },
-      jsPDF: { 
-        unit: 'in', 
-        format: 'letter', 
-        orientation: 'portrait',
-        putOnlyUsedFonts: true,
-        floatPrecision: 16
-      },
-      pagebreak: { 
-        mode: 'avoid-all',
-        before: '.page-break',
-        after: '.answer-card'
-      }
-    };
-
-    html2pdf().set(opt).from(content).save();
-    
+  const handleExport = () => {
+    generatePDF('answers-content');
     toast({
       title: "Success",
       description: "Exporting answers to PDF...",
@@ -240,169 +213,29 @@ const AiSolver = () => {
               <TabsTrigger value="answers">Answers</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="upload" className="space-y-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Upload Image</label>
-                  <div className="border-2 border-dashed border-gray-600 rounded-lg p-4">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <label
-                      htmlFor="image-upload"
-                      className="cursor-pointer flex flex-col items-center"
-                    >
-                      <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
-                      <span className="text-sm text-gray-400">
-                        Click to upload image
-                      </span>
-                    </label>
-                  </div>
-                  {image && (
-                    <div className="mt-2">
-                      <img
-                        src={URL.createObjectURL(image)}
-                        alt="Preview"
-                        className="max-h-48 rounded-lg mx-auto"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loading || !image}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Process Image"
-                  )}
-                </Button>
-              </form>
+            <TabsContent value="upload">
+              <UploadSection
+                loading={loading}
+                onImageUpload={handleImageUpload}
+                onSubmit={handleSubmit}
+                image={image}
+              />
             </TabsContent>
 
-            <TabsContent value="questions" className="space-y-6">
-              {questions.length === 0 ? (
-                <div className="text-center text-gray-400 py-8">
-                  No questions yet. Upload an image to extract questions.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {questions.map((question) => (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      key={question.id}
-                      className="bg-gray-800 rounded-lg p-4 space-y-3"
-                    >
-                      <h3 className="font-medium">{question.id}</h3>
-                      <div className="text-gray-300 prose prose-invert max-w-none">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkMath]}
-                          rehypePlugins={[rehypeKatex]}
-                        >
-                          {question.question}
-                        </ReactMarkdown>
-                      </div>
-                      <Button
-                        onClick={() => handleGetAnswer(question)}
-                        variant="secondary"
-                        disabled={answers.some(a => a.questionId === question.id) || loadingAnswers[question.id]}
-                        className="w-full"
-                      >
-                        {loadingAnswers[question.id] ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                            Generating Answer...
-                          </>
-                        ) : answers.some(a => a.questionId === question.id) ? (
-                          "Answer Generated"
-                        ) : (
-                          "Get Answer"
-                        )}
-                      </Button>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
+            <TabsContent value="questions">
+              <QuestionsSection
+                questions={questions}
+                loadingAnswers={loadingAnswers}
+                onGetAnswer={handleGetAnswer}
+                hasAnswer={hasAnswer}
+              />
             </TabsContent>
 
-            <TabsContent value="answers" className="space-y-6">
-              {answers.length === 0 ? (
-                <div className="text-center text-gray-400 py-8">
-                  No answers yet. Generate answers from the Questions tab.
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  <div 
-                    id="answers-content" 
-                    className="grid grid-cols-1 md:grid-cols-2 gap-8 print:gap-4"
-                    style={{ 
-                      breakInside: 'avoid-page',
-                      printColorAdjust: 'exact'
-                    }}
-                  >
-                    {answers.map((answer) => (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        key={answer.questionId}
-                        className="answer-card bg-gray-800 rounded-lg p-6 space-y-4 border border-gray-700 print:break-inside-avoid overflow-hidden"
-                        style={{ 
-                          breakInside: 'avoid',
-                          pageBreakInside: 'avoid',
-                          maxWidth: '100%'
-                        }}
-                      >
-                        <h3 className="font-medium text-lg">{answer.questionId}</h3>
-                        <div className="text-gray-300">
-                          <p className="font-medium mb-2">Question:</p>
-                          <div className="mb-4 prose prose-invert max-w-none break-words">
-                            <ReactMarkdown
-                              remarkPlugins={[remarkMath]}
-                              rehypePlugins={[rehypeKatex]}
-                              className="whitespace-pre-wrap overflow-wrap-anywhere"
-                            >
-                              {answer.question}
-                            </ReactMarkdown>
-                          </div>
-                          <p className="font-medium mb-2">Answer:</p>
-                          <div className="prose prose-invert max-w-none break-words">
-                            <ReactMarkdown
-                              remarkPlugins={[remarkMath]}
-                              rehypePlugins={[rehypeKatex]}
-                              className="whitespace-pre-wrap overflow-wrap-anywhere"
-                            >
-                              {answer.answer}
-                            </ReactMarkdown>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                  {answers.length > 0 && (
-                    <div className="fixed bottom-20 left-0 right-0 flex justify-center bg-black/80 backdrop-blur-sm py-4">
-                      <Button
-                        onClick={handleExportPDF}
-                        className="flex items-center gap-2"
-                        variant="secondary"
-                      >
-                        <FileDown className="w-4 h-4" />
-                        Export to PDF
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
+            <TabsContent value="answers">
+              <AnswersSection
+                answers={answers}
+                onExport={handleExport}
+              />
             </TabsContent>
           </Tabs>
         </motion.div>
