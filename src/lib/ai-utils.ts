@@ -1,6 +1,6 @@
 
 const API_BASE_URL = 'https://deepak191z-tst.hf.space/v1';
-const OCR_API_URL = 'https://deepak191z-ocr.hf.space/api/ocr';
+const OCR_API_URL = 'https://ocr2-rho.vercel.app/api/ocr';
 
 export class ChatError extends Error {
   constructor(message: string) {
