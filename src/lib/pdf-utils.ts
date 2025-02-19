@@ -66,12 +66,12 @@ export const generatePDF = async (elementId: string) => {
   // A4 dimensions and margins (in mm)
   const pageWidth = 210;
   const pageHeight = 297;
-  const margin = 20; // Increased margin for better spacing
+  const margin = 20; // Margins around the content
   const gap = 15; // Gap between cards
 
   // Calculate available space
   const contentWidth = pageWidth - (2 * margin);
-  const contentHeight = (pageHeight - (2 * margin) - gap) / 2; // Height for 2 cards
+  const contentHeight = (pageHeight - (2 * margin) - gap) / 2; // Height for each card
 
   // Process cards in groups of 2
   for (let i = 0; i < cards.length; i += 2) {
