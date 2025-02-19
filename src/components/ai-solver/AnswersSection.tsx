@@ -1,10 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css"; // ✅ Ensure KaTeX CSS is imported
 
 interface Answer {
   questionId: string;
@@ -54,7 +54,7 @@ export const AnswersSection = ({ answers, onExport }: AnswersSectionProps) => {
               <div className="mb-4 prose prose-invert max-w-none break-words">
                 <ReactMarkdown
                   remarkPlugins={[remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
+                  rehypePlugins={[[rehypeKatex, { output: "html" }]]} // ✅ Use proper KaTeX settings
                   className="whitespace-pre-wrap overflow-wrap-anywhere"
                 >
                   {answer.question}
@@ -64,7 +64,7 @@ export const AnswersSection = ({ answers, onExport }: AnswersSectionProps) => {
               <div className="prose prose-invert max-w-none break-words">
                 <ReactMarkdown
                   remarkPlugins={[remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
+                  rehypePlugins={[[rehypeKatex, { output: "html" }]]} // ✅ Ensure proper KaTeX rendering
                   className="whitespace-pre-wrap overflow-wrap-anywhere"
                 >
                   {answer.answer}
