@@ -29,6 +29,7 @@ interface Answer {
 const AiSolver = () => {
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingAnswers, setLoadingAnswers] = useState<{ [key: string]: boolean }>({});
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [activeTab, setActiveTab] = useState("upload");
@@ -101,7 +102,7 @@ const AiSolver = () => {
         const parsedQuestions = extractJsonFromResponse(result.choices[0].message.content);
         if (parsedQuestions && Array.isArray(parsedQuestions.questions)) {
           setQuestions(parsedQuestions.questions);
-          setActiveTab("questions"); // Automatically switch to questions tab
+          setActiveTab("questions");
           toast({
             title: "Success",
             description: "Questions extracted successfully",
@@ -133,7 +134,9 @@ const AiSolver = () => {
       return;
     }
 
-    setLoading(true);
+    // Set loading state for this specific question
+    setLoadingAnswers(prev => ({ ...prev, [question.id]: true }));
+
     try {
       const prompt = `Please provide a clear and detailed answer to this question. Include proper markdown formatting and LaTeX math formulas where appropriate. For example, use $...$ for inline math and $$...$$ for display math: ${question.question}`;
       const response = await sendMessage(prompt);
@@ -146,7 +149,7 @@ const AiSolver = () => {
       };
 
       setAnswers(prev => [...prev, newAnswer]);
-      setActiveTab("answers"); // Switch to answers tab after getting an answer
+      setActiveTab("answers");
       
       toast({
         title: "Success",
@@ -159,7 +162,8 @@ const AiSolver = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      // Clear loading state for this specific question
+      setLoadingAnswers(prev => ({ ...prev, [question.id]: false }));
     }
   };
 
@@ -278,13 +282,19 @@ const AiSolver = () => {
                       <Button
                         onClick={() => handleGetAnswer(question)}
                         variant="secondary"
-                        disabled={answers.some(a => a.questionId === question.id)}
+                        disabled={answers.some(a => a.questionId === question.id) || loadingAnswers[question.id]}
                         className="w-full"
                       >
-                        {answers.some(a => a.questionId === question.id) 
-                          ? "Answer Generated" 
-                          : "Get Answer"
-                        }
+                        {loadingAnswers[question.id] ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            Generating Answer...
+                          </>
+                        ) : answers.some(a => a.questionId === question.id) ? (
+                          "Answer Generated"
+                        ) : (
+                          "Get Answer"
+                        )}
                       </Button>
                     </motion.div>
                   ))}
