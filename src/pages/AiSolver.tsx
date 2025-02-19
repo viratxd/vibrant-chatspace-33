@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -326,7 +327,7 @@ const AiSolver = () => {
                   No answers yet. Generate answers from the Questions tab.
                 </div>
               ) : (
-                <div className="space-y-8">
+                <div className="space-y-8 pb-20"> {/* Added pb-20 to prevent overlap with sticky button */}
                   <div id="answers-content" className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {answers.map((answer) => (
                       <motion.div
@@ -359,16 +360,18 @@ const AiSolver = () => {
                       </motion.div>
                     ))}
                   </div>
-                  <div className="flex justify-center pb-32">
-                    <Button
-                      onClick={handleExportPDF}
-                      className="flex items-center gap-2"
-                      variant="secondary"
-                    >
-                      <FileDown className="w-4 h-4" />
-                      Export to PDF
-                    </Button>
-                  </div>
+                  {answers.length > 0 && (
+                    <div className="fixed bottom-20 left-0 right-0 flex justify-center bg-black/80 backdrop-blur-sm py-4 z-50">
+                      <Button
+                        onClick={handleExportPDF}
+                        className="flex items-center gap-2"
+                        variant="secondary"
+                      >
+                        <FileDown className="w-4 h-4" />
+                        Export to PDF
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>
