@@ -53,6 +53,17 @@ const AiSolver = () => {
     }
   };
 
+  const extractJsonFromResponse = (text: string): any => {
+    // Remove markdown code block syntax if present
+    const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
+    try {
+      return JSON.parse(jsonStr);
+    } catch (error) {
+      console.error("Failed to parse JSON:", error);
+      throw new Error("Failed to parse response format");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!image) {
@@ -71,7 +82,7 @@ const AiSolver = () => {
       const extractedText = await processImage(image);
       
       // Step 2: Generate questions using Chat API
-      const prompt = `Extract questions from this text and return them in this JSON format:
+      const prompt = `Extract questions from this text and return them in this JSON format without any markdown formatting or additional text:
       {
         "questions": [
           { "id": "Q1", "question": "first question" },
@@ -85,12 +96,16 @@ const AiSolver = () => {
       const result = await response.json();
       
       try {
-        const parsedQuestions = JSON.parse(result.choices[0].message.content);
-        setQuestions(parsedQuestions.questions || []);
-        toast({
-          title: "Success",
-          description: "Questions extracted successfully",
-        });
+        const parsedQuestions = extractJsonFromResponse(result.choices[0].message.content);
+        if (parsedQuestions && Array.isArray(parsedQuestions.questions)) {
+          setQuestions(parsedQuestions.questions);
+          toast({
+            title: "Success",
+            description: "Questions extracted successfully",
+          });
+        } else {
+          throw new Error("Invalid response format");
+        }
       } catch (error) {
         console.error("Failed to parse questions:", error);
         toast({
