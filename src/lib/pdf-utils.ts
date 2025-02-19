@@ -1,5 +1,6 @@
-// pdf-utils.ts
+
 import jsPDF from 'jspdf';
+import html2pdf from 'html2pdf.js';
 
 // Define the AnswerCard interface.
 export interface AnswerCard {
@@ -101,4 +102,24 @@ export const generateGridPDF = (answerCards: AnswerCard[]) => {
 
   // Save the generated PDF.
   doc.save('grid_answers.pdf');
+};
+
+// Added the missing generatePDF function
+export const generatePDF = async (elementId: string) => {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+
+  const opt = {
+    margin: 0.5,
+    filename: 'answers.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+  };
+
+  try {
+    await html2pdf().set(opt).from(element).save();
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+  }
 };
