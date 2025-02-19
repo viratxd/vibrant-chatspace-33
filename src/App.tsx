@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import Index from "./pages/Index";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
@@ -12,7 +12,7 @@ import "./App.css";
 
 function App() {
   return (
-    <Router>
+    <>
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/chat" element={<Chat />} />
@@ -23,7 +23,7 @@ function App() {
       </Routes>
       <BottomNav />
       <Toaster />
-    </Router>
+    </>
   );
 }
 
