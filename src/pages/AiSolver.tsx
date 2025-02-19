@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -171,11 +170,27 @@ const AiSolver = () => {
     if (!content) return;
 
     const opt = {
-      margin: [0.5, 0.5],
+      margin: [0.75, 0.75],
       filename: 'answers.pdf',
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      html2canvas: { 
+        scale: 2,
+        letterRendering: true,
+        useCORS: true,
+        logging: true
+      },
+      jsPDF: { 
+        unit: 'in', 
+        format: 'letter', 
+        orientation: 'portrait',
+        putOnlyUsedFonts: true,
+        floatPrecision: 16
+      },
+      pagebreak: { 
+        mode: 'avoid-all',
+        before: '.page-break',
+        after: '.answer-card'
+      }
     };
 
     html2pdf().set(opt).from(content).save();
@@ -327,31 +342,45 @@ const AiSolver = () => {
                   No answers yet. Generate answers from the Questions tab.
                 </div>
               ) : (
-                <div className="space-y-8 pb-20"> {/* Added pb-20 to prevent overlap with sticky button */}
-                  <div id="answers-content" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-8">
+                  <div 
+                    id="answers-content" 
+                    className="grid grid-cols-1 md:grid-cols-2 gap-8 print:gap-4"
+                    style={{ 
+                      breakInside: 'avoid-page',
+                      printColorAdjust: 'exact'
+                    }}
+                  >
                     {answers.map((answer) => (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         key={answer.questionId}
-                        className="bg-gray-800 rounded-lg p-6 space-y-4 border border-gray-700"
+                        className="answer-card bg-gray-800 rounded-lg p-6 space-y-4 border border-gray-700 print:break-inside-avoid overflow-hidden"
+                        style={{ 
+                          breakInside: 'avoid',
+                          pageBreakInside: 'avoid',
+                          maxWidth: '100%'
+                        }}
                       >
                         <h3 className="font-medium text-lg">{answer.questionId}</h3>
                         <div className="text-gray-300">
                           <p className="font-medium mb-2">Question:</p>
-                          <div className="mb-4 prose prose-invert max-w-none">
+                          <div className="mb-4 prose prose-invert max-w-none break-words">
                             <ReactMarkdown
                               remarkPlugins={[remarkMath]}
                               rehypePlugins={[rehypeKatex]}
+                              className="whitespace-pre-wrap overflow-wrap-anywhere"
                             >
                               {answer.question}
                             </ReactMarkdown>
                           </div>
                           <p className="font-medium mb-2">Answer:</p>
-                          <div className="prose prose-invert max-w-none">
+                          <div className="prose prose-invert max-w-none break-words">
                             <ReactMarkdown
                               remarkPlugins={[remarkMath]}
                               rehypePlugins={[rehypeKatex]}
+                              className="whitespace-pre-wrap overflow-wrap-anywhere"
                             >
                               {answer.answer}
                             </ReactMarkdown>
@@ -361,7 +390,7 @@ const AiSolver = () => {
                     ))}
                   </div>
                   {answers.length > 0 && (
-                    <div className="fixed bottom-20 left-0 right-0 flex justify-center bg-black/80 backdrop-blur-sm py-4 z-50">
+                    <div className="fixed bottom-20 left-0 right-0 flex justify-center bg-black/80 backdrop-blur-sm py-4">
                       <Button
                         onClick={handleExportPDF}
                         className="flex items-center gap-2"
