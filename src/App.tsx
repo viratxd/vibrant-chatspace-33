@@ -1,36 +1,29 @@
 
-import { BrowserRouter } from "react-router-dom";
-import { Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import Index from "@/pages/Index";
-import Chat from "@/pages/Chat";
-import AiSolver from "@/pages/AiSolver";
-import Pricing from "@/pages/Pricing";
-import Profile from "@/pages/Profile";
-import NotFound from "@/pages/NotFound";
+import { Route, Routes } from "react-router-dom";
+import Index from "./pages/Index";
+import Chat from "./pages/Chat";
+import Profile from "./pages/Profile";
+import AiSolver from "./pages/AiSolver";
+import Pricing from "./pages/Pricing";
+import { Toaster } from "./components/ui/toaster";
+import NotFound from "./pages/NotFound";
+import { BottomNav } from "./components/BottomNav";
 import "./App.css";
-
-const queryClient = new QueryClient();
 
 function App() {
   return (
-    <BrowserRouter>
-      <ThemeProvider attribute="class" defaultTheme="dark">
-        <QueryClientProvider client={queryClient}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/ai-solver" element={<AiSolver />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-        </QueryClientProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+    <>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/chat" element={<Chat />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/ai-solver" element={<AiSolver />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <BottomNav />
+      <Toaster />
+    </>
   );
 }
 
