@@ -361,7 +361,7 @@ const AiSolver = () => {
                     ))}
                   </div>
                   {answers.length > 0 && (
-                    <div className="fixed bottom-15 left-0 right-0 flex justify-center bg-black/80 backdrop-blur-sm py-4 z-50">
+                    <div className="fixed bottom-20 left-0 right-0 flex justify-center bg-black/80 backdrop-blur-sm py-4 z-50">
                       <Button
                         onClick={handleExportPDF}
                         className="flex items-center gap-2"
